@@ -32,5 +32,67 @@ namespace u21442453_HW03_API.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Internal Server Error, please contact support");
             }
         }
+
+        [HttpGet]
+        [Route("GetAllProductTypes")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> GetAllProductTypes()
+        {
+            try
+            {
+                var result = await _repository.GetAllProductTypesAsync();
+                return Ok(result);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Internal Server Error, please contact support");
+            }
+        }
+
+        [HttpGet]
+        [Route("GetAllBrands")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> GetAllBrands()
+        {
+            try
+            {
+                var result = await _repository.GetAllBrandsAsync();
+                return Ok(result);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Internal Server Error, please contact support");
+            }
+        }
+
+
+        [HttpPost]
+        [Route("AddProduct")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> AddProduct(Product model)
+        {
+            var product = new Product
+            {
+                Name = model.Name,
+                Price = model.Price,
+                BrandId = model.BrandId,
+                ProductTypeId = model.ProductTypeId,
+                Description = model.Description,
+                Image = model.Image,
+            };
+            try
+            {
+                _repository.Add(product);
+                if(await _repository.SaveChangesAsync())
+                {
+                    return Ok(new { product , status="success"});
+                }
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Internal Server Error, please contact support");
+            }
+            return StatusCode(StatusCodes.Status500InternalServerError, "Internal Server Error, please contact support");
+        }
     }
 }

@@ -5,7 +5,7 @@ namespace u21442453_HW03_API.Models
 {
     public class Product : BaseEntity
     {
-        public int ProductId { get; set; }
+        public int? ProductId { get; set; }
 
         public decimal Price { get; set; }
 
@@ -13,7 +13,7 @@ namespace u21442453_HW03_API.Models
         public int BrandId { get; set; }
         public int ProductTypeId { get; set; }
 
-        public ProductType ProductType { get; set; }
-        public Brand Brand { get; set; }
+        public ProductType? ProductType { get; set; }
+        public Brand? Brand { get; set; }
     }
 }

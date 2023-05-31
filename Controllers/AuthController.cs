@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using u21442453_HW03_API.Models;
+using u21442453_HW03_API.ViewModels;
 
 namespace u21442453_HW03_API.Controllers
 {
@@ -41,9 +42,15 @@ namespace u21442453_HW03_API.Controllers
             try
             {
                 var userExists = await _userManager.FindByEmailAsync(model.emailaddress);
-                if (userExists != null) return StatusCode(StatusCodes.Status403Forbidden, "Account already exists");
+                if (userExists != null) return StatusCode(StatusCodes.Status403Forbidden, new
+                {
+                    status = "error" 
+                });
                 var result = await _userManager.CreateAsync(appUser, model.password);
-                if (!result.Succeeded) return StatusCode(StatusCodes.Status500InternalServerError, "Registration failed, please try again.");
+                if (!result.Succeeded) return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    status = "error"
+                });
 
                 return Ok(result);
             }
@@ -61,14 +68,20 @@ namespace u21442453_HW03_API.Controllers
             {
                 var user = await _userManager.FindByEmailAsync(model.emailaddress);
 
-                if (user == null) return StatusCode(StatusCodes.Status404NotFound, "User not found...");
+                if (user == null) return StatusCode(StatusCodes.Status404NotFound, new
+                {
+                    status = "error"
+                });
 
-                if (!await _userManager.CheckPasswordAsync(user, model.password)) return StatusCode(StatusCodes.Status403Forbidden, "Password is incorrect...");
+                if (!await _userManager.CheckPasswordAsync(user, model.password)) return StatusCode(StatusCodes.Status403Forbidden, new
+                {
+                    status = "error"
+                });
 
                 var tokenObject = await GenerateJWTToken(user);
                 string JwtToken = new JwtSecurityTokenHandler().WriteToken(tokenObject);
                 //await _userManager.SetAuthenticationTokenAsync(user, "JWT.io", "JWT Bearer Token", JwtToken);
-                return JwtResponse(tokenObject, JwtToken, user);
+                return JwtResponse(tokenObject, JwtToken, user, "success");
             }
             catch (Exception)
             {
@@ -76,7 +89,49 @@ namespace u21442453_HW03_API.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpPost]
+        [Route("CheckToken")]
+        public IActionResult CheckJWTExpiration(TokenViewModel model)
+        {
+            try
+            {
+                var validResult = CheckToken(model.Token);
+                return TokenExpResponse(validResult);
+            }
+            catch (Exception)
+            {
+                return BadRequest("Internal server error, please contact support...");
+            }
+        }
+
+        private static long GetTokenExpTime(string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jwtSecurityToken = handler.ReadJwtToken(token);
+            var tokenExp = jwtSecurityToken.Claims.First(claim => claim.Type.Equals("exp")).Value;
+            var ticks = long.Parse(tokenExp);
+            return ticks;
+        }
+
+        private static bool CheckToken(string token)
+        {
+            var tokenTicks = GetTokenExpTime(token);
+            var tokenDate = DateTimeOffset.FromUnixTimeSeconds(tokenTicks).UtcDateTime;
+
+            var now = DateTime.UtcNow;
+
+            var valid = tokenDate >= now;
+
+            return valid;  
+        }
+
+        private ActionResult TokenExpResponse(Boolean valid)
+        {
+            return Ok(new {
+                tokenValid = valid
+            });
+        }
+
         private async Task<JwtSecurityToken> GenerateJWTToken(AppUser user)
         {
             var userRoles = await _userManager.GetRolesAsync(user);
@@ -105,14 +160,14 @@ namespace u21442453_HW03_API.Controllers
             return token;
         }
 
-        [HttpGet]
-        private ActionResult JwtResponse(JwtSecurityToken token, string JwtToken, AppUser user)
+        private ActionResult JwtResponse(JwtSecurityToken token, string JwtToken, AppUser user, string status)
         {
             return Created("", new
             {
                 token = JwtToken,
                 expiry = token.ValidTo,
-                user = user.UserName
+                user = user.UserName,
+                status = status
             });
         }
         }

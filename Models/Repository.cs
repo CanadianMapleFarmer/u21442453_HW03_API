@@ -23,8 +23,22 @@ namespace u21442453_HW03_API.Models
 
         public async Task<Product[]> GetAllProductsAsync()
         {
-            var products = _appDbContext.Products;
+            var products = _appDbContext.Products
+                .Include(p => p.Brand)
+                .Include(p => p.ProductType);
             return await products.ToArrayAsync();
+        }
+
+        public async Task<ProductType[]> GetAllProductTypesAsync()
+        {
+            var productTypes = _appDbContext.ProductTypes;
+            return await productTypes.ToArrayAsync();
+        }
+
+        public async Task<Brand[]> GetAllBrandsAsync()
+        {
+            var brands = _appDbContext.Brands;
+            return await brands.ToArrayAsync();
         }
     }
 }

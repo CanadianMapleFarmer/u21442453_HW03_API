@@ -6,5 +6,7 @@
         
         void Add<T>(T entity) where T : class;
         Task<Product[]> GetAllProductsAsync();
+        Task<ProductType[]> GetAllProductTypesAsync();
+        Task<Brand[]> GetAllBrandsAsync();
     }
 }
